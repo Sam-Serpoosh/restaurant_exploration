@@ -1,4 +1,5 @@
 import datetime
+from texter import Texter
 
 class Person:
 
@@ -6,6 +7,9 @@ class Person:
     self.ident     = ident
     self.name      = name
     self.last_date = last_date
+
+  def date_str(self):
+    return self.last_date.strftime("%m/%d/%Y")
 
   def __eq__(self, other):
     return self.last_date == other.last_date
@@ -17,41 +21,33 @@ class Person:
     return self.last_date > other.last_date
 
   def __repr__(self):
-    date_str = self.last_date.strftime("%m/%d/%Y")
-    return "{0},{1},{2}".format(self.ident, self.name, date_str)
+    return "{0},{1},{2}".format(self.ident, self.name, self.date_str())
 
 class Planner:
 
-  TWO_WEEKS_IN_DAYS = 14
+  DAYS_PER_WEEK     = 7
   RECENT_CSV_HEADER = "id,name,date"
 
   def __init__(self, filename):
     self.filename = filename
 
-  def contact_next_planner(self):
-    people            = self.load_recent_date()
-    next, updated_ppl = self.who_is_next(people)
-    self._text(next)
+  def who_is_next(self):
+    people      = self._load_recent_dates()
+    last_person = max(people)
+    next_person = self._find_next_person(last_person.ident, people)
+    next_person.last_date = self._weeks_later(last_person.last_date, 2)
 
-    return updated_ppl
+    return (next_person, people)
 
-  def load_recent_date(self):
+  # private methods
+
+  def _load_recent_dates(self):
     with open(self.filename) as f:
       lines = f.readlines()
     data = lines[1:len(lines)]
     people = map(self._csv_line_to_person, data)
 
     return people
-
-  def who_is_next(self, people):
-    last_person = max(people)
-    next_date   = last_person.last_date + datetime.timedelta(days=Planner.TWO_WEEKS_IN_DAYS)
-    next_person = self._find_next_person(last_person.ident, people)
-    next_person.last_date = next_date
-
-    return (next_person, people)
-
-  # private methods
 
   def _csv_line_to_person(self, data):
     parts = data.rstrip().split(StringUtils.COMMA)
@@ -65,8 +61,9 @@ class Planner:
     person = next(p for p in people if p.ident == ident + 1)
     return person
 
-  def _text(self, person):
-    pass
+  def _weeks_later(self, date, num_of_weeks):
+    days_count = num_of_weeks * Planner.DAYS_PER_WEEK
+    return date + datetime.timedelta(days=days_count)
 
 class CsvWriter:
 
@@ -83,5 +80,8 @@ if __name__ == "__main__":
   filename   = "./recent_data.csv"
   planner    = Planner(filename)
   csv_writer = CsvWriter()
-  people     = planner.contact_next_planner()
+  texter     = Texter()
+
+  next_person, people = planner.who_is_next()
   csv_writer.write(filename, Planner.RECENT_CSV_HEADER, people)
+  texter.text(next_person)
