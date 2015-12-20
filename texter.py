@@ -12,12 +12,10 @@ class Texter:
 
   def text(self, person):
     msg_body = """
-
-    **************
-    Who : {0}
-    When: {1}
-    **************
-
+**************
+Who : {0}
+When: {1}
+**************
     """.format(person.name, person.date_str())
 
     self.client.messages.create(to=Texter.RECV_NUM,

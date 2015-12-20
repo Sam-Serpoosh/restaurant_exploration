@@ -1,8 +1,9 @@
 # data
 *.csv
 
-# config data
+# project files
 config_data
+TODO
 
 # vim
 *.swp
